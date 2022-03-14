@@ -7,7 +7,9 @@ int main(int argc, char **argv){
   nodelet::M_string remap(ros::names::getRemappings());
   nodelet::V_string nargv;
   std::string nodelet_name = ros::this_node::getName();
+  ROS_INFO("HER 0");
   nodelet.load(nodelet_name, "imu_transformer/imu_transformer_nodelet", remap, nargv);
+  ROS_INFO("HER 1");
   ros::spin();
   return 0;
 }

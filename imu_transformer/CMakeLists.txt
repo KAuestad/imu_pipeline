@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(imu_transformer)
 
 find_package(catkin REQUIRED COMPONENTS
@@ -29,6 +29,9 @@ target_link_libraries(imu_transformer_nodelet ${catkin_LIBRARIES})
 
 add_executable(imu_transformer_node src/imu_transformer_node.cpp)
 target_link_libraries(imu_transformer_node ${catkin_LIBRARIES})
+
+find_package(Eigen3 REQUIRED)
+include_directories(SYSTEM ${EIGEN3_INCLUDE_DIRS})
 
 if(CATKIN_ENABLE_TESTING)
   find_package(roslaunch REQUIRED)

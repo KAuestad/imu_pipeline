@@ -10,32 +10,29 @@ namespace imu_transformer
 {
 
   void ImuTransformerNodelet::onInit(){
-
     nh_in_ = ros::NodeHandle(getNodeHandle(), "imu_in");
     nh_out_ = ros::NodeHandle(getNodeHandle(), "imu_out");
     private_nh_ = getPrivateNodeHandle();
-
     private_nh_.param<std::string>("target_frame", target_frame_, "base_link");
-
     tf2_.reset(new tf2_ros::Buffer());
     tf2_listener_.reset(new tf2_ros::TransformListener(*tf2_));
 
-    imu_sub_.subscribe(nh_in_, "data", 10);
+    imu_sub_.subscribe(nh_in_, "/mavros/imu/data", 10);
     imu_filter_.reset(new ImuFilter(imu_sub_, *tf2_, target_frame_, 10, nh_in_));
     imu_filter_->registerCallback(boost::bind(&ImuTransformerNodelet::imuCallback, this, _1));
     imu_filter_->registerFailureCallback(boost::bind(&ImuTransformerNodelet::failureCb, this, _2));
-
     mag_sub_.subscribe(nh_in_, "mag", 10);
     // TF Message filter doesn't support ShapeShifter, which we use for Mag messages. Uncomment when IMU Rep goes into
     // effect and we don't need to support two types of Mag message.
-//      mag_filter_.reset(new MagFilter(mag_sub_, *tf2_, target_frame_, 10, nh_in_));
-//      mag_filter_->registerCallback(boost::bind(&ImuTransformerNodelet::magCallback, this, _1));
-//      mag_filter_->registerFailureCallback(boost::bind(&ImuTransformerNodelet::failureCb, this, _2));
+    // mag_filter_.reset(new MagFilter(mag_sub_, *tf2_, target_frame_, 10, nh_in_));
+    // mag_filter_->registerCallback(boost::bind(&ImuTransformerNodelet::magCallback, this, _1));
+    // mag_filter_->registerFailureCallback(boost::bind(&ImuTransformerNodelet::failureCb, this, _2));
     mag_sub_.registerCallback(boost::bind(&ImuTransformerNodelet::magCallback, this, _1));
   }
 
   void ImuTransformerNodelet::imuCallback(const ImuMsg::ConstPtr &imu_in)
   {
+    ROS_INFO("IMU CB");
     if(imu_pub_.getTopic().empty()){
       imu_pub_ = nh_out_.advertise<ImuMsg>("data", 10);
     }
@@ -43,7 +40,29 @@ namespace imu_transformer
     try
     {
       ImuMsg imu_out;
-      tf2_->transform(*imu_in, imu_out, target_frame_);
+      ImuMsg imu_in_temp;
+
+      imu_in_temp.header = imu_in->header;
+      imu_in_temp.header.stamp =ros::Time::now();
+      
+      imu_in_temp.angular_velocity.x = imu_in->angular_velocity.x;
+      imu_in_temp.angular_velocity.y = imu_in->angular_velocity.y;
+      imu_in_temp.angular_velocity.z = imu_in->angular_velocity.z;
+      imu_in_temp.angular_velocity_covariance = imu_in->angular_velocity_covariance;
+
+      imu_in_temp.linear_acceleration.x = imu_in->linear_acceleration.x;
+      imu_in_temp.linear_acceleration.y = imu_in->linear_acceleration.y;
+      imu_in_temp.linear_acceleration.z = imu_in->linear_acceleration.z;
+      imu_in_temp.linear_acceleration_covariance = imu_in->linear_acceleration_covariance;
+
+      imu_in_temp.orientation.w = imu_in->orientation.w;
+      imu_in_temp.orientation.x = imu_in->orientation.x;
+      imu_in_temp.orientation.y = imu_in->orientation.y;
+      imu_in_temp.orientation.z = imu_in->orientation.z;
+      imu_in_temp.orientation_covariance = imu_in->orientation_covariance;
+      
+
+      tf2_->transform(imu_in_temp, imu_out, target_frame_);
       imu_pub_.publish(imu_out);
     }
     catch (tf2::TransformException ex)
@@ -57,7 +76,7 @@ namespace imu_transformer
   // effect
   void ImuTransformerNodelet::magCallback(const topic_tools::ShapeShifter::ConstPtr &msg)
   {
-
+    ROS_INFO("mag cb");
     std::string error;
     try
     {
