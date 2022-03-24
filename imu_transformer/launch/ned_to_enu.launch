@@ -2,7 +2,7 @@
 <launch>
   <arg name="use_static_tf" default="true" />
   <!-- Sample launch file, transforms NED referenced data in imu_link_ned to ENU equivalent data in imu_link -->
-  <param name="use_sim_time"  value="true" />
+  <!-- <param name="use_sim_time"  value="true" />-->
   <!-- Static tfs -->
   <!--<node pkg="tf2_ros" type="static_transform_publisher" name="tf_imu_ned_enu"
         args="0 0 0 1.5708 0 3.1416 base_link imu_link" output="screen"/> -->
